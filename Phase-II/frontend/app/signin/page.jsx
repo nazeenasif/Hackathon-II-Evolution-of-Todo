@@ -6,28 +6,6 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Input from '@/components/ui/Input';
 
-// Same fetch wrapper
-async function fetchJSON(url, options, retries = 5, delay = 2000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const res = await fetch(url, options);
-
-      const text = await res.text();
-      try {
-        const data = JSON.parse(text);
-        return { ok: res.ok, data };
-      } catch {
-        console.warn("Response not JSON, retrying...", text.slice(0, 100));
-        await new Promise(r => setTimeout(r, delay));
-      }
-    } catch (err) {
-      console.error("Fetch error, retrying...", err);
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-  throw new Error("Failed to get JSON from backend after retries");
-}
-
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,39 +14,50 @@ export default function SignInPage() {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setError('');
 
     try {
-      const { ok, data } = await fetchJSON(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signin`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      // In a real implementation, this would call the Better Auth API
+      // For now, we'll simulate a successful login and store a mock token
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (ok) {
+      if (response.ok) {
+        const data = await response.json();
+        // Store the JWT token in localStorage
         localStorage.setItem('jwt_token', data.access_token);
         router.push('/dashboard');
       } else {
+        const errorData = await response.json();
+
+        // Safely handle different types of error responses
         let errorMessage = 'Invalid credentials';
-        if (data.detail) {
-          if (Array.isArray(data.detail)) {
-            errorMessage = data.detail.map(err => err.msg || JSON.stringify(err)).join('; ');
-          } else if (typeof data.detail === 'string') {
-            errorMessage = data.detail;
+
+        if (errorData.detail) {
+          if (Array.isArray(errorData.detail)) {
+            // If detail is an array of error objects, extract messages
+            errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join('; ');
+          } else if (typeof errorData.detail === 'string') {
+            // If detail is a string, use it directly
+            errorMessage = errorData.detail;
           } else {
-            errorMessage = JSON.stringify(data.detail);
+            // For other types, convert to string safely
+            errorMessage = JSON.stringify(errorData.detail);
           }
-        } else if (data.message) {
-          errorMessage = data.message;
+        } else if (errorData.message) {
+          // If there's a message property, use it
+          errorMessage = errorData.message;
         }
+
         setError(errorMessage);
       }
     } catch (err) {
+      setError('An error occurred during sign in');
       console.error('Sign in error:', err);
-      setError('Backend is not responding. Please wait a few seconds and try again.');
     }
   };
 
