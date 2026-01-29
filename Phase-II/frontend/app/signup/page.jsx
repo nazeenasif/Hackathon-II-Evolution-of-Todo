@@ -6,41 +6,64 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Input from '@/components/ui/Input';
 
+// Safe fetch wrapper to handle HF cold start
+async function fetchJSON(url, options, retries = 5, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+
+      // Try parsing JSON, otherwise retry
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        return { ok: res.ok, data };
+      } catch {
+        console.warn("Response not JSON, retrying...", text.slice(0, 100));
+        await new Promise(r => setTimeout(r, delay));
+      }
+    } catch (err) {
+      console.error("Fetch error, retrying...", err);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw new Error("Failed to get JSON from backend after retries");
+}
+
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState([]); // store errors as array of strings
+  const [error, setError] = useState([]);
   const router = useRouter();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+    setError([]); // reset errors
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
-      });
+      const { ok, data } = await fetchJSON(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signup`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password }),
+        }
+      );
 
-      if (response.ok) {
-        const data = await response.json();
+      if (ok) {
         localStorage.setItem('jwt_token', data.access_token);
         router.push('/signin');
       } else {
-        const data = await response.json();
         let errorsArray = [];
-
         if (data.detail) {
-           if (Array.isArray(data.detail)) {
-            // Convert each object to a readable string
+          if (Array.isArray(data.detail)) {
             errorsArray = data.detail.map(err => {
-              if (typeof err === 'string') return err;       // Already a string
-              if (err.msg) {                                 // Validation object
+              if (typeof err === 'string') return err;
+              if (err.msg) {
                 const field = Array.isArray(err.loc) ? err.loc.join('.') : 'field';
                 return `${field}: ${err.msg}`;
               }
-              return JSON.stringify(err);                    // Fallback
+              return JSON.stringify(err);
             });
           } else if (typeof data.detail === 'string') {
             errorsArray = [data.detail];
@@ -48,13 +71,11 @@ export default function SignUpPage() {
             errorsArray = [JSON.stringify(data.detail)];
           }
         }
-
-
-        setError(errorsArray); // always set an array of strings
+        setError(errorsArray.length ? errorsArray : ['Signup failed']);
       }
     } catch (err) {
-      setError(['An error occurred during sign up']);
       console.error('Sign up error:', err);
+      setError(['Backend is not responding. Please wait a few seconds and try again.']);
     }
   };
 
