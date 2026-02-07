@@ -1,0 +1,14 @@
+fastapi
+sqlmodel
+sqlalchemy
+pydantic
+pydantic-settings
+uvicorn
+psycopg2-binary
+pytest
+httpx
+alembic
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
+bcrypt==3.2.0
