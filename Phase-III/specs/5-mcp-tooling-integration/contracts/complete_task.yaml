@@ -1,0 +1,71 @@
+# MCP Tool Contract: complete_task
+
+## Purpose
+Marks an existing task as completed using the existing backend task completion functionality.
+
+## Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "ID of the task to mark as complete"
+    }
+  },
+  "required": ["task_id"],
+  "additionalProperties": false
+}
+```
+
+## Output Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Whether the operation succeeded"
+    },
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the completed task"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if operation failed"
+    }
+  },
+  "required": ["success"],
+  "oneOf": [
+    {
+      "properties": {
+        "success": {"const": true},
+        "task_id": {"type": "integer"}
+      },
+      "required": ["task_id"]
+    },
+    {
+      "properties": {
+        "success": {"const": false},
+        "error": {"type": "string"}
+      },
+      "required": ["error"]
+    }
+  ],
+  "additionalProperties": false
+}
+```
+
+## Error Cases
+- ValidationError: Input validation failed
+- UnauthorizedError: User not authenticated or lacks permissions
+- NotFoundError: Task with specified ID does not exist
+- AlreadyCompletedError: Task is already marked as completed
+- DatabaseError: Failed to update task in database
+
+## Implementation Notes
+- Leverages existing task service's complete_task method
+- Maintains existing validation rules from backend
+- Preserves user authentication and task ownership checks from existing system

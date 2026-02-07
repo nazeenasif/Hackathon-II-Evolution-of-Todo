@@ -1,0 +1,93 @@
+# MCP Tool Contract: add_task
+
+## Purpose
+Creates a new task in the system using the existing backend task creation functionality.
+
+## Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Task title",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "description": {
+      "type": "string",
+      "description": "Task description",
+      "maxLength": 1000
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Due date in ISO 8601 format"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "default": "medium"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10
+    }
+  },
+  "required": ["title"],
+  "additionalProperties": false
+}
+```
+
+## Output Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Whether the operation succeeded"
+    },
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the created task"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if operation failed"
+    }
+  },
+  "required": ["success"],
+  "oneOf": [
+    {
+      "properties": {
+        "success": {"const": true},
+        "task_id": {"type": "integer"}
+      },
+      "required": ["task_id"]
+    },
+    {
+      "properties": {
+        "success": {"const": false},
+        "error": {"type": "string"}
+      },
+      "required": ["error"]
+    }
+  ],
+  "additionalProperties": false
+}
+```
+
+## Error Cases
+- ValidationError: Input validation failed
+- UnauthorizedError: User not authenticated or lacks permissions
+- DuplicateTaskError: Task with same title already exists
+- DatabaseError: Failed to save task to database
+
+## Implementation Notes
+- Leverages existing task service's create_task method
+- Maintains existing validation rules from backend
+- Preserves user authentication from existing system

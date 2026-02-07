@@ -1,0 +1,270 @@
+openapi: 3.0.3
+info:
+  title: AI Chat Agent API
+  description: API for AI-powered conversational interface for task management
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+paths:
+  /chat:
+    post:
+      summary: Process chat message and return AI response
+      description: Send a message to the AI chat agent and receive a response with potential tool calls
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Optional ID of existing conversation to continue
+                message:
+                  type: string
+                  description: The user's message to the AI agent
+      responses:
+        '200':
+          description: Successful response from AI agent
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversation_id
+                  - response
+                properties:
+                  conversation_id:
+                    type: string
+                    format: uuid
+                    description: ID of the conversation (new or existing)
+                  response:
+                    type: string
+                    description: AI-generated response to the user
+                  tool_calls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tool_name:
+                          type: string
+                          description: Name of the tool that was called
+                        arguments:
+                          type: object
+                          description: Arguments passed to the tool
+                        result:
+                          type: object
+                          description: Result returned by the tool
+        '401':
+          description: Unauthorized - Invalid or expired JWT token
+        '403':
+          description: Forbidden - User doesn't have access to this conversation
+        '422':
+          description: Unprocessable Entity - Invalid request format
+        '500':
+          description: Internal Server Error - AI processing failure
+      security:
+        - bearerAuth: []
+
+  /conversations:
+    get:
+      summary: Get list of user's conversations
+      description: Retrieve all conversations belonging to the authenticated user
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of conversations to return
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          description: Number of conversations to skip
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of user's conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversations
+                  - total
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+                  total:
+                    type: integer
+                    description: Total number of conversations
+        '401':
+          description: Unauthorized - Invalid or expired JWT token
+        '403':
+          description: Forbidden - User doesn't have access to these conversations
+      security:
+        - bearerAuth: []
+
+  /conversations/{conversation_id}:
+    get:
+      summary: Get conversation details
+      description: Retrieve details of a specific conversation including messages
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          description: ID of the conversation to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation details with messages
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversation
+                  - messages
+                properties:
+                  conversation:
+                    $ref: '#/components/schemas/Conversation'
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized - Invalid or expired JWT token
+        '403':
+          description: Forbidden - User doesn't own this conversation
+        '404':
+          description: Not Found - Conversation doesn't exist
+      security:
+        - bearerAuth: []
+
+    delete:
+      summary: Delete a conversation
+      description: Permanently delete a conversation and all its messages
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          description: ID of the conversation to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Conversation successfully deleted
+        '401':
+          description: Unauthorized - Invalid or expired JWT token
+        '403':
+          description: Forbidden - User doesn't own this conversation
+        '404':
+          description: Not Found - Conversation doesn't exist
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:
+    Conversation:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the conversation
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user who owns the conversation
+        title:
+          type: string
+          description: Human-readable title for the conversation
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when conversation was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when conversation was last updated
+
+    Message:
+      type: object
+      required:
+        - id
+        - conversation_id
+        - role
+        - content
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the message
+        conversation_id:
+          type: string
+          format: uuid
+          description: ID of the conversation this message belongs to
+        role:
+          type: string
+          enum: [user, assistant, system, tool]
+          description: Role of the message sender
+        content:
+          type: string
+          description: Content of the message
+        tool_calls:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the tool call
+              name:
+                type: string
+                description: Name of the tool being called
+              arguments:
+                type: object
+                description: Arguments for the tool call
+          description: Information about tools called by the AI (if applicable)
+        tool_call_results:
+          type: array
+          items:
+            type: object
+            properties:
+              tool_call_id:
+                type: string
+                description: ID of the tool call this result corresponds to
+              output:
+                type: string
+                description: Output from the tool execution
+          description: Results from tool executions (if applicable)
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when message was created
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication endpoint
