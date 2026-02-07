@@ -18,7 +18,7 @@ export default function SignInPage() {
     try {
       // In a real implementation, this would call the Better Auth API
       // For now, we'll simulate a successful login and store a mock token
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signin`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
