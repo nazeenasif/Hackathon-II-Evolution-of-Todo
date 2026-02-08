@@ -1,0 +1,18 @@
+fastapi
+sqlmodel
+sqlalchemy
+pydantic
+pydantic-settings
+uvicorn
+psycopg2-binary
+pytest
+httpx
+alembic
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
+openai
+# mcp-sdk
+cohere
+google-generativeai
+bcrypt==3.2.0
