@@ -1,0 +1,98 @@
+# MCP Tool Contract: update_task
+
+## Purpose
+Updates an existing task with new information using the existing backend task update functionality.
+
+## Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "ID of the task to update"
+    },
+    "title": {
+      "type": "string",
+      "description": "New task title",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "description": {
+      "type": "string",
+      "description": "New task description",
+      "maxLength": 1000
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "New due date in ISO 8601 format"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "description": "New priority level"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10
+    }
+  },
+  "required": ["task_id"],
+  "additionalProperties": false
+}
+```
+
+## Output Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Whether the operation succeeded"
+    },
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the updated task"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if operation failed"
+    }
+  },
+  "required": ["success"],
+  "oneOf": [
+    {
+      "properties": {
+        "success": {"const": true},
+        "task_id": {"type": "integer"}
+      },
+      "required": ["task_id"]
+    },
+    {
+      "properties": {
+        "success": {"const": false},
+        "error": {"type": "string"}
+      },
+      "required": ["error"]
+    }
+  ],
+  "additionalProperties": false
+}
+```
+
+## Error Cases
+- ValidationError: Input validation failed
+- UnauthorizedError: User not authenticated or lacks permissions
+- NotFoundError: Task with specified ID does not exist
+- DatabaseError: Failed to update task in database
+
+## Implementation Notes
+- Leverages existing task service's update_task method
+- Maintains existing validation rules from backend
+- Preserves user authentication and task ownership checks from existing system

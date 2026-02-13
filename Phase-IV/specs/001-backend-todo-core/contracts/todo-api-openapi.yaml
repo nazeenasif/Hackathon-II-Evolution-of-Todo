@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Multi-User Todo API
+  description: REST API for managing tasks in a multi-user todo application
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+paths:
+  /{user_id}/tasks:
+    get:
+      summary: List tasks for a specific user
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user whose tasks to retrieve
+          schema:
+            type: integer
+        - name: completed
+          in: query
+          required: false
+          description: Filter by completion status
+          schema:
+            type: boolean
+        - name: priority
+          in: query
+          required: false
+          description: Filter by priority level
+          schema:
+            type: string
+            enum: [high, medium, low]
+        - name: tag
+          in: query
+          required: false
+          description: Filter by tag/category
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          description: Search term for title or description
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          required: false
+          description: Field to sort by
+          schema:
+            type: string
+            enum: [due_date, priority, title]
+            default: due_date
+        - name: order
+          in: query
+          required: false
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: List of tasks for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '404':
+          description: User not found
+    post:
+      summary: Create a new task for a user
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user creating the task
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Invalid input data
+        '404':
+          description: User not found
+  /{user_id}/tasks/{task_id}:
+    get:
+      summary: Get a specific task
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found or doesn't belong to user
+    put:
+      summary: Update a task
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to update
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Invalid input data
+        '404':
+          description: Task not found or doesn't belong to user
+    delete:
+      summary: Delete a task
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to delete
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          description: Task not found or doesn't belong to user
+  /{user_id}/tasks/{task_id}/complete:
+    patch:
+      summary: Toggle task completion status
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to update
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task completion status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found or doesn't belong to user
+components:
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - completed
+        - priority
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the task
+        user_id:
+          type: integer
+          description: ID of the user who owns this task
+        title:
+          type: string
+          maxLength: 255
+          description: Task title
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional task description
+        completed:
+          type: boolean
+          description: Whether the task is completed
+          default: false
+        priority:
+          type: string
+          enum: [high, medium, low]
+          description: Priority level of the task
+          default: medium
+        tags:
+          type: string
+          maxLength: 500
+          description: Comma-separated tags for categorization
+        due_date:
+          type: string
+          format: date-time
+          description: Optional due date for the task
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was last updated
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Task title
+        description:
+          type: string
+          maxLength: 1000
+          description: Optional task description
+        priority:
+          type: string
+          enum: [high, medium, low]
+          description: Priority level of the task
+          default: medium
+        tags:
+          type: string
+          maxLength: 500
+          description: Comma-separated tags for categorization
+        due_date:
+          type: string
+          format: date-time
+          description: Optional due date for the task
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Updated task title
+        description:
+          type: string
+          maxLength: 1000
+          description: Updated task description
+        priority:
+          type: string
+          enum: [high, medium, low]
+          description: Updated priority level of the task
+        tags:
+          type: string
+          maxLength: 500
+          description: Updated tags for categorization
+        due_date:
+          type: string
+          format: date-time
+          description: Updated due date for the task
+        completed:
+          type: boolean
+          description: Updated completion status

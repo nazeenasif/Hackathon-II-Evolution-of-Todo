@@ -1,0 +1,115 @@
+# MCP Tool Contract: list_tasks
+
+## Purpose
+Retrieves a list of tasks based on optional filters using the existing backend task retrieval functionality.
+
+## Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["all", "pending", "completed"],
+      "default": "all",
+      "description": "Filter tasks by status"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20,
+      "description": "Maximum number of tasks to return"
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Offset for pagination"
+    },
+    "sort_by": {
+      "type": "string",
+      "enum": ["created_at", "due_date", "priority", "title"],
+      "default": "created_at",
+      "description": "Field to sort by"
+    },
+    "order": {
+      "type": "string",
+      "enum": ["asc", "desc"],
+      "default": "desc",
+      "description": "Sort order"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+## Output Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Whether the operation succeeded"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "status": {"type": "string", "enum": ["pending", "completed"]},
+          "due_date": {"type": "string", "format": "date-time"},
+          "priority": {"type": "string", "enum": ["low", "medium", "high"]},
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "created_at": {"type": "string", "format": "date-time"},
+          "updated_at": {"type": "string", "format": "date-time"},
+          "user_id": {"type": "integer"}
+        },
+        "required": ["id", "title", "status", "created_at", "updated_at", "user_id"],
+        "additionalProperties": false
+      }
+    },
+    "total_count": {
+      "type": "integer",
+      "description": "Total number of tasks matching criteria"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if operation failed"
+    }
+  },
+  "required": ["success", "tasks", "total_count"],
+  "oneOf": [
+    {
+      "properties": {
+        "success": {"const": true}
+      }
+    },
+    {
+      "properties": {
+        "success": {"const": false},
+        "error": {"type": "string"}
+      },
+      "required": ["error"]
+    }
+  ],
+  "additionalProperties": false
+}
+```
+
+## Error Cases
+- ValidationError: Input validation failed
+- UnauthorizedError: User not authenticated or lacks permissions
+- DatabaseError: Failed to retrieve tasks from database
+
+## Implementation Notes
+- Leverages existing task service's get_tasks method
+- Maintains existing filtering and sorting logic from backend
+- Preserves user authentication and task ownership checks from existing system
