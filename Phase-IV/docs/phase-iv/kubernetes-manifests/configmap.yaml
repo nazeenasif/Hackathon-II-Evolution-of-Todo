@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-backend-config
+  namespace: todo-app
+  labels:
+    app: todo-backend
+    project: todo-chatbot
+    phase: "iv"
+data:
+  DATABASE_URL: "postgresql://neondb_owner:npg_TDcW03sRJloq@ep-super-sea-ahncc7yi-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "info"
+  SECRET_KEY: "48983120168b67cde1080fc0a02215cbad32ba9faa7961aaced1f05f046c0dc496de9be835617d62f66bce64da9b6fb14a0e0a766197e1dbe5dd885b9a23cdb8"
+  BETTER_AUTH_SECRET: "f6011a5b2a5b2b68e0b34c1eb2c49e963a82434c21d299fa5f8cb5cb3ff49296"
+  AI_PROVIDER: "cohere"
+  COHERE_API_KEY: "VZIwkH0u9hBLgM6jGXiWws71dFPRDh1UHmybsAgR"
+  COHERE_MODEL: "command-nightly"
+  OPENAI_API_KEY: "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"
