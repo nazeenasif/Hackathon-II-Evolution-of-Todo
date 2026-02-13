@@ -1,0 +1,21 @@
+# Minikube override values for todo-chatbot Helm chart.
+# Apply with: helm install todo ./helm/todo-chatbot -n todo-app --values ./helm/todo-chatbot/values-local.yaml
+
+frontend:
+  image:
+    pullPolicy: Never        # Images loaded via minikube image load — no registry
+  replicas: 2
+  service:
+    type: NodePort            # Expose frontend via NodePort for minikube service URL
+
+backend:
+  image:
+    pullPolicy: Never         # Images loaded via minikube image load — no registry
+  replicas: 1
+  resources:
+    requests:
+      cpu: "50m"              # Reduced for single-node Minikube cluster
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"

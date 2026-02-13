@@ -1,0 +1,82 @@
+# Default values for todo-chatbot Helm chart.
+# These values are suitable for a standard deployment.
+# Override with values-local.yaml for Minikube.
+
+global:
+  namespace: todo-app
+
+frontend:
+  image:
+    repository: todo-frontend
+    tag: v1
+    pullPolicy: IfNotPresent
+  replicas: 2
+  port: 3000
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  env:
+    NEXT_PUBLIC_API_URL: "http://todo-backend:8000"
+    PORT: "3000"
+    HOSTNAME: "0.0.0.0"
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    failureThreshold: 3
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    failureThreshold: 3
+
+backend:
+  image:
+    repository: todo-backend
+    tag: v2
+    pullPolicy: IfNotPresent
+  replicas: 1
+  port: 8000
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+  env:
+    HOST: "0.0.0.0"
+    PORT: "8000"
+    CORS_ORIGINS: "http://localhost:3000,http://todo-frontend:80"
+    ENVIRONMENT: "production"
+  configMapRef: "todo-backend-config"
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 8000
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    failureThreshold: 3

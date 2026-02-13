@@ -1,0 +1,15 @@
+apiVersion: v2
+name: todo-chatbot
+description: Cloud Native Todo Chatbot – full-stack deployment (frontend + backend)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - chatbot
+  - nextjs
+  - fastapi
+maintainers:
+  - name: Phase IV Team
+sources:
+  - https://github.com/todo-chatbot/phase-iv
